@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONSTER PLAYER - DROPBOX BACKGROUND</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,900;1,900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Estética Agressiva Denylson Monster */
+        .monster-text {
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            letter-spacing: -0.05em;
+        }
+
+        .monster-title {
+            font-size: clamp(3rem, 15vw, 8rem);
+            line-height: 0.8;
+            filter: drop-shadow(0 0 20px rgba(37, 99, 235, 0.7));
+            color: #2563eb;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(20px);
+            border: 4px solid rgba(59, 130, 246, 0.4);
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .progress-bar {
+            height: 14px;
+            background: #111827;
+            border-radius: 7px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #3b82f6;
+            width: 0%;
+            transition: width 0.1s linear;
+            box-shadow: 0 0 25px #3b82f6;
+        }
+
+        .song-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .song-card.active {
+            border-color: #3b82f6;
+            background: rgba(37, 99, 235, 0.25);
+            transform: scale(1.02);
+        }
+
+        .status-msg {
+            font-size: 0.75rem;
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            display: none;
+            border-left: 10px solid;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4">
+
+    <div class="w-full max-w-md flex flex-col gap-8 pt-6">
+        <!-- Header Hardcore -->
+        <header class="text-center transform -rotate-2">
+            <h1 class="monster-text monster-title">MONSTER</h1>
+            <h2 class="monster-text text-3xl text-white opacity-80 mt-[-10px]">DROPBOX</h2>
+            <p class="text-[10px] font-black tracking-[0.5em] text-blue-500 mt-2 uppercase">Background Guard • Denylson PRO</p>
+        </header>
+
+        <div id="status-display" class="status-msg monster-text italic"></div>
+
+        <!-- Seção de Adição -->
+        <section class="glass-card p-6 rounded-[2.5rem] flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
+                <label class="monster-text text-[10px] text-blue-500 tracking-widest ml-2">TRACK ID</label>
+                <input type="text" id="song-name" placeholder="NOME DA FAIXA" 
+                    class="bg-black/50 border border-blue-500/20 rounded-xl p-4 text-sm focus:border-blue-500 outline-none font-bold uppercase italic text-white placeholder-slate-800">
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="monster-text text-[10px] text-blue-500 tracking-widest ml-2">DROPBOX URL</label>
+                <input type="text" id="song-url" placeholder="COLE O LINK COMPARTILHADO" 
+                    class="bg-black/50 border border-blue-500/20 rounded-xl p-4 text-sm focus:border-blue-500 outline-none text-white placeholder-slate-800">
+            </div>
+            <button id="add-btn" class="monster-text bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg shadow-lg active:scale-95">
+                <i data-lucide="plus-square" class="w-6 h-6"></i> INJETAR NO SET
+            </button>
+        </section>
+
+        <!-- Player Ativo -->
+        <section id="player-container" class="glass-card p-8 rounded-[3rem] hidden flex flex-col gap-8 shadow-[0_0_100px_rgba(37,99,235,0.4)]">
+            <div class="text-center">
+                <h3 id="current-title" class="text-3xl monster-text truncate px-2 text-white">READY TO LIFT</h3>
+                <div class="flex justify-center mt-3">
+                    <span class="bg-blue-600 text-[10px] px-4 py-1 rounded-full font-black tracking-[0.4em] uppercase">Sinal Ativo</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <div id="progress-container" class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
+                </div>
+                <div class="flex justify-between text-[11px] font-black text-blue-400 font-mono">
+                    <span id="time-current">00:00</span>
+                    <span id="time-total">00:00</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center gap-10">
+                <button id="btn-prev" class="text-slate-600 hover:text-white transition-all active:scale-75"><i data-lucide="skip-back" class="w-10 h-10 fill-current"></i></button>
+                <button id="btn-play-pause" class="bg-white text-black w-24 h-24 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-90 transition-all border-[8px] border-blue-600/20">
+                    <i data-lucide="play" class="fill-current w-10 h-10 ml-2" id="play-icon"></i>
+                </button>
+                <button id="btn-next" class="text-slate-600 hover:text-white transition-all active:scale-75"><i data-lucide="skip-forward" class="w-10 h-10 fill-current"></i></button>
+            </div>
+        </section>
+
+        <!-- Library -->
+        <section class="flex flex-col gap-5 pb-40">
+            <div class="flex justify-between items-end px-4 border-b-8 border-blue-600/30 pb-3">
+                <h4 class="monster-text text-blue-500 text-2xl italic">SETLIST</h4>
+                <span id="song-count" class="text-white font-black text-[10px] opacity-50 uppercase">0 Tracks</span>
+            </div>
+            <div id="playlist-container" class="flex flex-col gap-4 px-1"></div>
+        </section>
+    </div>
+
+    <audio id="audio-player" preload="auto"></audio>
+
+    <script>
+        const audioPlayer = document.getElementById('audio-player');
+        const songNameInput = document.getElementById('song-name');
+        const songUrlInput = document.getElementById('song-url');
+        const addBtn = document.getElementById('add-btn');
+        const playlistContainer = document.getElementById('playlist-container');
+        const playerContainer = document.getElementById('player-container');
+        const currentTitle = document.getElementById('current-title');
+        const playIcon = document.getElementById('play-icon');
+        const progressFill = document.getElementById('progress-fill');
+        const progressContainer = document.getElementById('progress-container');
+        const timeCurrent = document.getElementById('time-current');
+        const timeTotal = document.getElementById('time-total');
+        const statusDisplay = document.getElementById('status-display');
+
+        let playlist = JSON.parse(localStorage.getItem('monster_setlist_v2')) || [];
+        let currentIndex = -1;
+
+        // --- INICIALIZAÇÃO ---
+        function init() {
+            renderPlaylist();
+            lucide.createIcons();
+            setupMediaSession();
+        }
+
+        function showStatus(msg, isError = false) {
+            statusDisplay.textContent = msg;
+            statusDisplay.style.display = 'block';
+            statusDisplay.style.backgroundColor = isError ? '#450a0a' : '#1e3a8a';
+            statusDisplay.style.borderColor = isError ? '#ef4444' : '#2563eb';
+            statusDisplay.style.color = isError ? '#fecaca' : '#bfdbfe';
+            setTimeout(() => { statusDisplay.style.display = 'none'; }, 5000);
+        }
+
+        // --- ENGENHARIA DE URL ---
+        function formatDropboxUrl(rawUrl) {
+            try {
+                let url = new URL(rawUrl.trim());
+                url.searchParams.set('raw', '1');
+                url.searchParams.delete('dl');
+                return url.toString();
+            } catch (e) {
+                return rawUrl.includes('?') ? rawUrl.replace(/dl=[01]/, 'raw=1') : rawUrl + '?raw=1';
+            }
+        }
+
+        // --- LÓGICA DE PERSISTÊNCIA ---
+        addBtn.onclick = () => {
+            const name = songNameInput.value.trim();
+            const rawUrl = songUrlInput.value.trim();
+
+            if (!name || !rawUrl) {
+                showStatus("CAMPOS VAZIOS. OPERAÇÃO CANCELADA.", true);
+                return;
+            }
+
+            const streamUrl = formatDropboxUrl(rawUrl);
+            const newTrack = { id: Date.now(), name: name.toUpperCase(), url: streamUrl };
+
+            playlist.unshift(newTrack);
+            localStorage.setItem('monster_setlist_v2', JSON.stringify(playlist));
+            renderPlaylist();
+            
+            songNameInput.value = '';
+            songUrlInput.value = '';
+            showStatus("TRACK INJETADA NO BANCO LOCAL.");
+        };
+
+        function renderPlaylist() {
+            playlistContainer.innerHTML = '';
+            document.getElementById('song-count').textContent = `${playlist.length} TRACKS`;
+
+            playlist.forEach((track, index) => {
+                const div = document.createElement('div');
+                div.className = `song-card glass-card p-6 rounded-[2rem] flex items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-all ${currentIndex === index ? 'active' : ''}`;
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-5 overflow-hidden flex-1" onclick="playTrack(${index})">
+                        <div class="w-16 h-16 ${currentIndex === index ? 'bg-blue-600 shadow-[0_0_30px_#3b82f6]' : 'bg-black'} rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-500">
+                            <i data-lucide="${currentIndex === index ? 'zap' : 'play-circle'}" class="w-8 h-8 text-white"></i>
+                        </div>
+                        <div class="flex flex-col overflow-hidden">
+                            <span class="text-xl font-900 truncate text-white italic tracking-tighter uppercase leading-none mb-1">${track.name}</span>
+                            <span class="text-[9px] text-blue-500 font-black tracking-widest uppercase">Pronto para o Combate</span>
+                        </div>
+                    </div>
+                    <button class="text-slate-700 hover:text-red-500 p-2 transition-all active:scale-50" onclick="event.stopPropagation(); deleteTrack(${index})">
+                        <i data-lucide="trash-2" class="w-7 h-7"></i>
+                    </button>
+                `;
+                playlistContainer.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        // --- PLAYER CORE (BACKGROUND OPTIMIZED) ---
+        window.playTrack = (index) => {
+            if (index < 0 || index >= playlist.length) return;
+            currentIndex = index;
+            const track = playlist[index];
+            
+            playerContainer.classList.remove('hidden');
+            currentTitle.textContent = track.name;
+            
+            audioPlayer.src = track.url;
+            audioPlayer.load(); // Vital para o background no mobile
+            
+            audioPlayer.play().then(() => {
+                updateMetadata(track.name);
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
+            }).catch(e => {
+                showStatus("FALHA NO STREAMING. VERIFIQUE A LIGAÇÃO.", true);
+            });
+            
+            renderPlaylist();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        window.deleteTrack = (index) => {
+            if (confirm("REMOVER TRACK?")) {
+                playlist.splice(index, 1);
+                localStorage.setItem('monster_setlist_v2', JSON.stringify(playlist));
+                if (currentIndex === index) {
+                    audioPlayer.pause();
+                    playerContainer.classList.add('hidden');
+                    currentIndex = -1;
+                }
+                renderPlaylist();
+            }
+        };
+
+        // --- MEDIA SESSION (A CHAVE PARA O SEGUNDO PLANO) ---
+        function setupMediaSession() {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.setActionHandler('play', () => audioPlayer.play());
+                navigator.mediaSession.setActionHandler('pause', () => audioPlayer.pause());
+                navigator.mediaSession.setActionHandler('previoustrack', () => playTrack((currentIndex - 1 + playlist.length) % playlist.length));
+                navigator.mediaSession.setActionHandler('nexttrack', () => playTrack((currentIndex + 1) % playlist.length));
+            }
+        }
+
+        function updateMetadata(title) {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: title,
+                    artist: 'MONSTER DROPBOX PLAYER',
+                    album: 'DENYLSON PRO SET',
+                    artwork: [
+                        { src: 'https://cdn-icons-png.flaticon.com/512/3050/3050212.png', sizes: '512x512', type: 'image/png' }
+                    ]
+                });
+            }
+        }
+
+        // --- CONTROLOS ---
+        document.getElementById('btn-play-pause').onclick = () => {
+            audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
+        };
+
+        audioPlayer.onplay = () => {
+            playIcon.setAttribute('data-lucide', 'pause');
+            lucide.createIcons();
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
+        };
+
+        audioPlayer.onpause = () => {
+            playIcon.setAttribute('data-lucide', 'play');
+            lucide.createIcons();
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "paused";
+        };
+
+        document.getElementById('btn-next').onclick = () => playTrack((currentIndex + 1) % playlist.length);
+        document.getElementById('btn-prev').onclick = () => playTrack((currentIndex - 1 + playlist.length) % playlist.length);
+
+        audioPlayer.ontimeupdate = () => {
+            if (audioPlayer.duration) {
+                const perc = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+                progressFill.style.width = `${perc}%`;
+                const fmt = (s) => Math.floor(s/60) + ":" + Math.floor(s%60).toString().padStart(2,'0');
+                timeCurrent.textContent = fmt(audioPlayer.currentTime);
+                timeTotal.textContent = fmt(audioPlayer.duration);
+            }
+        };
+
+        progressContainer.onclick = (e) => {
+            const rect = progressContainer.getBoundingClientRect();
+            audioPlayer.currentTime = ((e.clientX - rect.left) / rect.width) * audioPlayer.duration;
+        };
+
+        // AUTO-NEXT
+        audioPlayer.onended = () => document.getElementById('btn-next').click();
+
+        init();
+    </script>
+</body>
+</html>
