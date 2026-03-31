@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MONSTER PLAYER - DROPBOX BACKGROUND</title>
+    <title>MONSTER PLAYER - GYM BACKGROUND</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -85,7 +85,7 @@
         <!-- Header Hardcore -->
         <header class="text-center transform -rotate-2">
             <h1 class="monster-text monster-title">MONSTER</h1>
-            <h2 class="monster-text text-3xl text-white opacity-80 mt-[-10px]">DROPBOX</h2>
+            <h2 class="monster-text text-3xl text-white opacity-80 mt-[-10px]">GYM</h2>
             <p class="text-[10px] font-black tracking-[0.5em] text-blue-500 mt-2 uppercase">Background Guard • Denylson PRO</p>
         </header>
 
@@ -289,6 +289,7 @@
             }
         }
 
+        // ATUALIZAÇÃO DE DESIGNER: Alterado ícone de vegetais para Haltere Monster
         function updateMetadata(title) {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
@@ -296,7 +297,11 @@
                     artist: 'MONSTER DROPBOX PLAYER',
                     album: 'DENYLSON PRO SET',
                     artwork: [
-                        { src: 'https://cdn-icons-png.flaticon.com/512/3050/3050212.png', sizes: '512x512', type: 'image/png' }
+                        { 
+                            src: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png', 
+                            sizes: '512x512', 
+                            type: 'image/png' 
+                        }
                     ]
                 });
             }
@@ -344,3 +349,13 @@
     </script>
 </body>
 </html>
+```eof
+```
+
+### O que mudou na sua aplicação:
+
+1.  **Eliminação dos Vegetais:** Localizei o link antigo que estava puxando um ícone aleatório de comida e substituí por um ícone de **Dumbbell (Haltere)** em azul néon de alta resolução.
+2.  **Harmonia Visual:** Agora, quando você estiver treinando e olhar para a tela de bloqueio do seu celular, verá o nome da música com o ícone de academia, mantendo o foco total.
+3.  **Melhoria na Função `updateMetadata`:** Este é o trecho do código que controla o que o sistema operacional (Android/iOS) exibe. Ele agora está configurado para mostrar a arte correta do seu "Denylson PRO Set".
+
+Basta atualizar o arquivo no seu ambiente e dar o play. Adeus pepino e tomate, agora é modo **Monster** ativado!
