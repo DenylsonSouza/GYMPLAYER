@@ -88,6 +88,14 @@
             box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
         }
 
+        /* UX Engineering: Estilos do Progresso Circular */
+        .circular-progress {
+            transform: rotate(-90deg);
+        }
+        .circular-progress-circle {
+            transition: stroke-dashoffset 0.1s linear;
+        }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
@@ -237,14 +245,19 @@
                 return;
             }
 
-            const btnContainer = document.getElementById(`dl-btn-${id}`);
-            const progressContainer = document.getElementById(`dl-progress-container-${id}`);
-            const progressFill = document.getElementById(`dl-progress-fill-${id}`);
+            const btn = document.getElementById(`dl-btn-${id}`);
+            const icon = document.getElementById(`dl-icon-${id}`);
+            const percentTxt = document.getElementById(`dl-percent-${id}`);
+            const svg = document.getElementById(`dl-progress-svg-${id}`);
+            const circle = document.getElementById(`dl-progress-circle-${id}`);
             const statusText = document.getElementById(`track-status-${id}`);
             
-            // UX: Esconde o botão e revela a barra de progresso
-            if(btnContainer) btnContainer.classList.add('hidden');
-            if(progressContainer) progressContainer.classList.remove('hidden');
+            // UX: Esconde ícone, revela SVG circular e percentagem
+            if(icon) icon.classList.add('hidden');
+            if(percentTxt) percentTxt.classList.remove('hidden');
+            if(svg) svg.classList.remove('hidden');
+            if(btn) btn.classList.remove('hover:text-blue-400', 'active:scale-75'); // Desativa hover para parecer um loader
+            
             if(statusText) {
                 statusText.textContent = "A INICIAR TRANSFERÊNCIA...";
                 statusText.classList.remove('text-blue-500');
@@ -272,15 +285,20 @@
                     
                     if (total) {
                         const percent = Math.round((loaded / total) * 100);
-                        if(progressFill) progressFill.style.width = `${percent}%`;
+                        // Circunferência de r=15 é aprox 94.25
+                        const offset = 94.25 - ((percent / 100) * 94.25);
+                        
+                        if(circle) circle.style.strokeDashoffset = offset;
+                        if(percentTxt) percentTxt.textContent = percent;
                         if(statusText) statusText.textContent = `A TRANSFERIR... ${percent}%`;
                     } else {
-                        // Fallback se o Dropbox ocultar o tamanho total (Animação infinita + MB lidos)
-                        if(progressFill) {
-                            progressFill.style.width = `100%`;
-                            progressFill.classList.add('animate-pulse');
+                        // Fallback se o Dropbox ocultar o tamanho total (Animação de "loading" circular)
+                        if(circle) {
+                            circle.style.strokeDasharray = "30 94.25";
+                            svg.classList.add('animate-spin');
                         }
                         const mbLoaded = (loaded / (1024 * 1024)).toFixed(1);
+                        if(percentTxt) percentTxt.textContent = '...';
                         if(statusText) statusText.textContent = `A TRANSFERIR... ${mbLoaded}MB`;
                     }
                 }
@@ -298,8 +316,11 @@
             } catch (err) {
                 console.error(err);
                 // Reverte a UI em caso de falha
-                if(progressContainer) progressContainer.classList.add('hidden');
-                if(btnContainer) btnContainer.classList.remove('hidden');
+                if(icon) icon.classList.remove('hidden');
+                if(percentTxt) percentTxt.classList.add('hidden');
+                if(svg) svg.classList.add('hidden');
+                if(btn) btn.classList.add('hover:text-blue-400', 'active:scale-75');
+
                 if(statusText) {
                     statusText.textContent = "STREAMING";
                     statusText.classList.remove('text-green-400');
@@ -399,18 +420,23 @@
                         <div class="flex flex-col overflow-hidden w-full pr-2">
                             <span class="text-xl font-900 truncate text-white italic tracking-tighter uppercase leading-none mb-1">${track.name}</span>
                             <span id="track-status-${track.id}" class="text-[9px] ${isOffline ? 'text-green-500' : 'text-blue-500'} font-black tracking-widest uppercase">${isOffline ? 'PRONTO OFFLINE' : 'STREAMING'}</span>
-                            
-                            <!-- Nova Barra de Progresso da Transferência -->
-                            <div id="dl-progress-container-${track.id}" class="hidden w-full h-1.5 bg-slate-800 rounded mt-2 overflow-hidden border border-slate-700">
-                                <div id="dl-progress-fill-${track.id}" class="h-full bg-green-500 w-0 transition-all duration-200 ease-out shadow-[0_0_10px_#22c55e]"></div>
-                            </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 relative">
                         ${!isOffline ? `
-                        <button id="dl-btn-${track.id}" class="text-slate-500 hover:text-blue-400 p-2 transition-all active:scale-75" title="Salvar Offline" onclick="makeOffline(${track.id}, '${track.url}', event)">
-                            <i id="dl-icon-${track.id}" data-lucide="download-cloud" class="w-6 h-6"></i>
-                        </button>` : ''}
+                        <div class="relative w-10 h-10 flex items-center justify-center">
+                            <!-- SVG Progresso Circular Oculto -->
+                            <svg id="dl-progress-svg-${track.id}" class="hidden absolute inset-0 w-full h-full circular-progress" viewBox="0 0 36 36">
+                                <circle cx="18" cy="18" r="15" fill="none" stroke="#1e293b" stroke-width="2.5"></circle>
+                                <circle id="dl-progress-circle-${track.id}" class="circular-progress-circle" cx="18" cy="18" r="15" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-dasharray="94.25" stroke-dashoffset="94.25" stroke-linecap="round"></circle>
+                            </svg>
+                            <!-- Botão de Download / Progresso Textual -->
+                            <button id="dl-btn-${track.id}" class="relative z-10 text-slate-500 hover:text-blue-400 transition-all active:scale-75 flex items-center justify-center w-full h-full" title="Salvar Offline" onclick="makeOffline(${track.id}, '${track.url}', event)">
+                                <i id="dl-icon-${track.id}" data-lucide="download-cloud" class="w-6 h-6"></i>
+                                <span id="dl-percent-${track.id}" class="hidden text-[10px] font-black text-green-400">0</span>
+                            </button>
+                        </div>
+                        ` : ''}
                         <button class="text-slate-700 hover:text-red-500 p-2 transition-all active:scale-50" title="Excluir" onclick="event.stopPropagation(); deleteTrack(${index}, ${track.id})">
                             <i data-lucide="trash-2" class="w-6 h-6"></i>
                         </button>
