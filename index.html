@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MONSTER PLAYER - GYM BACKGROUND</title>
+    <title>MONSTER PLAYER - DROPBOX OFFLINE</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -27,7 +27,7 @@
         .monster-title {
             font-size: clamp(3rem, 15vw, 8rem);
             line-height: 0.8;
-            filter: drop-shadow(0 0 20px rgba(37, 99, 235, 0.7));
+            filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.7));
             color: #2563eb;
         }
 
@@ -39,11 +39,12 @@
         }
 
         .progress-bar {
-            height: 14px;
+            height: 16px;
             background: #111827;
-            border-radius: 7px;
+            border-radius: 8px;
             cursor: pointer;
             overflow: hidden;
+            border: 1px solid rgba(59, 130, 246, 0.2);
         }
 
         .progress-fill {
@@ -68,11 +69,23 @@
         .status-msg {
             font-size: 0.75rem;
             text-align: center;
-            padding: 10px;
+            padding: 12px;
             border-radius: 12px;
             margin-bottom: 10px;
             display: none;
             border-left: 10px solid;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .offline-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
         }
 
         ::-webkit-scrollbar { width: 6px; }
@@ -85,14 +98,14 @@
         <!-- Header Hardcore -->
         <header class="text-center transform -rotate-2">
             <h1 class="monster-text monster-title">MONSTER</h1>
-            <h2 class="monster-text text-3xl text-white opacity-80 mt-[-10px]">GYM</h2>
-            <p class="text-[10px] font-black tracking-[0.5em] text-blue-500 mt-2 uppercase">Background Guard • Denylson PRO</p>
+            <h2 class="monster-text text-3xl text-white opacity-80 mt-[-10px]">DROPBOX</h2>
+            <p class="text-[10px] font-black tracking-[0.5em] text-blue-500 mt-2 uppercase">Offline Guard • Denylson PRO</p>
         </header>
 
-        <div id="status-display" class="status-msg monster-text italic"></div>
+        <div id="status-display" class="status-msg monster-text italic tracking-wider"></div>
 
         <!-- Seção de Adição -->
-        <section class="glass-card p-6 rounded-[2.5rem] flex flex-col gap-4">
+        <section class="glass-card p-6 rounded-[2.5rem] flex flex-col gap-5">
             <div class="flex flex-col gap-2">
                 <label class="monster-text text-[10px] text-blue-500 tracking-widest ml-2">TRACK ID</label>
                 <input type="text" id="song-name" placeholder="NOME DA FAIXA" 
@@ -113,7 +126,7 @@
             <div class="text-center">
                 <h3 id="current-title" class="text-3xl monster-text truncate px-2 text-white">READY TO LIFT</h3>
                 <div class="flex justify-center mt-3">
-                    <span class="bg-blue-600 text-[10px] px-4 py-1 rounded-full font-black tracking-[0.4em] uppercase">Sinal Ativo</span>
+                    <span id="player-badge" class="bg-blue-600 text-[10px] px-4 py-1 rounded-full font-black tracking-[0.4em] uppercase">Sinal Ativo</span>
                 </div>
             </div>
 
@@ -121,18 +134,34 @@
                 <div id="progress-container" class="progress-bar">
                     <div id="progress-fill" class="progress-fill"></div>
                 </div>
-                <div class="flex justify-between text-[11px] font-black text-blue-400 font-mono">
+                <div class="flex justify-between text-[12px] font-black text-blue-400 font-mono">
                     <span id="time-current">00:00</span>
                     <span id="time-total">00:00</span>
                 </div>
             </div>
 
-            <div class="flex items-center justify-center gap-10">
-                <button id="btn-prev" class="text-slate-600 hover:text-white transition-all active:scale-75"><i data-lucide="skip-back" class="w-10 h-10 fill-current"></i></button>
-                <button id="btn-play-pause" class="bg-white text-black w-24 h-24 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-90 transition-all border-[8px] border-blue-600/20">
+            <div class="flex items-center justify-center gap-6">
+                <!-- Retroceder 10s -->
+                <button id="btn-rewind" class="text-slate-500 hover:text-blue-400 transition-colors active:scale-75" title="Voltar 10s">
+                    <i data-lucide="rotate-ccw" class="w-7 h-7"></i>
+                </button>
+                
+                <button id="btn-prev" class="text-slate-400 hover:text-white transition-colors active:scale-75">
+                    <i data-lucide="skip-back" class="w-10 h-10 fill-current"></i>
+                </button>
+                
+                <button id="btn-play-pause" class="bg-white text-black w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-90 transition-all border-[8px] border-blue-600/30">
                     <i data-lucide="play" class="fill-current w-10 h-10 ml-2" id="play-icon"></i>
                 </button>
-                <button id="btn-next" class="text-slate-600 hover:text-white transition-all active:scale-75"><i data-lucide="skip-forward" class="w-10 h-10 fill-current"></i></button>
+                
+                <button id="btn-next" class="text-slate-400 hover:text-white transition-colors active:scale-75">
+                    <i data-lucide="skip-forward" class="w-10 h-10 fill-current"></i>
+                </button>
+
+                <!-- Avançar 10s -->
+                <button id="btn-forward" class="text-slate-500 hover:text-blue-400 transition-colors active:scale-75" title="Avançar 10s">
+                    <i data-lucide="rotate-cw" class="w-7 h-7"></i>
+                </button>
             </div>
         </section>
 
@@ -162,12 +191,101 @@
         const timeCurrent = document.getElementById('time-current');
         const timeTotal = document.getElementById('time-total');
         const statusDisplay = document.getElementById('status-display');
+        const playerBadge = document.getElementById('player-badge');
 
         let playlist = JSON.parse(localStorage.getItem('monster_setlist_v2')) || [];
         let currentIndex = -1;
+        
+        // --- ENGENHARIA OFFLINE (IndexedDB) ---
+        const DB_NAME = "MonsterOfflineGuard";
+        let db;
+        let offlineTracks = new Set();
 
-        // --- INICIALIZAÇÃO ---
-        function init() {
+        const initDB = () => {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    db = e.target.result;
+                    if (!db.objectStoreNames.contains("audioBlobs")) {
+                        db.createObjectStore("audioBlobs", { keyPath: "id" });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    db = e.target.result;
+                    loadOfflineStatus().then(resolve);
+                };
+                request.onerror = (e) => reject(e);
+            });
+        };
+
+        const loadOfflineStatus = () => {
+            return new Promise((resolve) => {
+                const tx = db.transaction("audioBlobs", "readonly");
+                const req = tx.objectStore("audioBlobs").getAllKeys();
+                req.onsuccess = () => {
+                    offlineTracks = new Set(req.result);
+                    resolve();
+                };
+            });
+        };
+
+        window.makeOffline = async (id, url, event) => {
+            event.stopPropagation(); // Evita dar play na música ao clicar no botão de download
+            
+            if (offlineTracks.has(id)) {
+                showStatus("TRACK JÁ ESTÁ OFFLINE!", false);
+                return;
+            }
+
+            showStatus("BAIXANDO PARA A MEMÓRIA OFFLINE...", false);
+            const btnIcon = document.getElementById(`dl-icon-${id}`);
+            if(btnIcon) btnIcon.classList.add('animate-bounce', 'text-blue-400');
+
+            try {
+                // Faz o fetch do Dropbox. O ?raw=1 geralmente permite CORS.
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Erro na rede");
+                const blob = await response.blob();
+                
+                const tx = db.transaction("audioBlobs", "readwrite");
+                tx.objectStore("audioBlobs").put({ id: id, blob: blob });
+                
+                tx.oncomplete = () => {
+                    offlineTracks.add(id);
+                    renderPlaylist();
+                    showStatus("SUCESSO: DISPONÍVEL SEM INTERNET!", false);
+                };
+            } catch (err) {
+                console.error(err);
+                if(btnIcon) btnIcon.classList.remove('animate-bounce', 'text-blue-400');
+                showStatus("ERRO: O DROPBOX BLOQUEOU O DOWNLOAD DIRETO. CONTINUARÁ ONLINE.", true);
+            }
+        };
+
+        const getOfflineBlob = (id) => {
+            return new Promise((resolve) => {
+                const tx = db.transaction("audioBlobs", "readonly");
+                const req = tx.objectStore("audioBlobs").get(id);
+                req.onsuccess = () => resolve(req.result ? req.result.blob : null);
+                req.onerror = () => resolve(null);
+            });
+        };
+
+        const deleteOfflineBlob = (id) => {
+            if (!offlineTracks.has(id)) return;
+            const tx = db.transaction("audioBlobs", "readwrite");
+            tx.objectStore("audioBlobs").delete(id);
+            tx.oncomplete = () => offlineTracks.delete(id);
+        };
+
+
+        // --- INICIALIZAÇÃO GERAL ---
+        async function init() {
+            try {
+                await initDB();
+            } catch (e) {
+                console.error("IndexedDB não suportado");
+            }
             renderPlaylist();
             lucide.createIcons();
             setupMediaSession();
@@ -179,7 +297,7 @@
             statusDisplay.style.backgroundColor = isError ? '#450a0a' : '#1e3a8a';
             statusDisplay.style.borderColor = isError ? '#ef4444' : '#2563eb';
             statusDisplay.style.color = isError ? '#fecaca' : '#bfdbfe';
-            setTimeout(() => { statusDisplay.style.display = 'none'; }, 5000);
+            setTimeout(() => { statusDisplay.style.display = 'none'; }, 4000);
         }
 
         // --- ENGENHARIA DE URL ---
@@ -213,7 +331,7 @@
             
             songNameInput.value = '';
             songUrlInput.value = '';
-            showStatus("TRACK INJETADA NO BANCO LOCAL.");
+            showStatus("TRACK INJETADA NA LISTA.");
         };
 
         function renderPlaylist() {
@@ -221,30 +339,38 @@
             document.getElementById('song-count').textContent = `${playlist.length} TRACKS`;
 
             playlist.forEach((track, index) => {
+                const isOffline = offlineTracks.has(track.id);
                 const div = document.createElement('div');
                 div.className = `song-card glass-card p-6 rounded-[2rem] flex items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-all ${currentIndex === index ? 'active' : ''}`;
                 
                 div.innerHTML = `
                     <div class="flex items-center gap-5 overflow-hidden flex-1" onclick="playTrack(${index})">
-                        <div class="w-16 h-16 ${currentIndex === index ? 'bg-blue-600 shadow-[0_0_30px_#3b82f6]' : 'bg-black'} rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-500">
+                        <div class="w-16 h-16 ${currentIndex === index ? 'bg-blue-600 shadow-[0_0_30px_#3b82f6]' : 'bg-black'} rounded-2xl flex items-center justify-center flex-shrink-0 transition-all duration-500 relative">
                             <i data-lucide="${currentIndex === index ? 'zap' : 'play-circle'}" class="w-8 h-8 text-white"></i>
+                            ${isOffline ? '<div class="absolute -top-2 -right-2 bg-green-500 rounded-full p-1 border-2 border-slate-900"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>' : ''}
                         </div>
                         <div class="flex flex-col overflow-hidden">
                             <span class="text-xl font-900 truncate text-white italic tracking-tighter uppercase leading-none mb-1">${track.name}</span>
-                            <span class="text-[9px] text-blue-500 font-black tracking-widest uppercase">Pronto para o Combate</span>
+                            <span class="text-[9px] ${isOffline ? 'text-green-500' : 'text-blue-500'} font-black tracking-widest uppercase">${isOffline ? 'PRONTO OFFLINE' : 'STREAMING'}</span>
                         </div>
                     </div>
-                    <button class="text-slate-700 hover:text-red-500 p-2 transition-all active:scale-50" onclick="event.stopPropagation(); deleteTrack(${index})">
-                        <i data-lucide="trash-2" class="w-7 h-7"></i>
-                    </button>
+                    <div class="flex items-center gap-2">
+                        ${!isOffline ? `
+                        <button class="text-slate-500 hover:text-blue-400 p-2 transition-all active:scale-75" title="Salvar Offline" onclick="makeOffline(${track.id}, '${track.url}', event)">
+                            <i id="dl-icon-${track.id}" data-lucide="download-cloud" class="w-6 h-6"></i>
+                        </button>` : ''}
+                        <button class="text-slate-700 hover:text-red-500 p-2 transition-all active:scale-50" title="Excluir" onclick="event.stopPropagation(); deleteTrack(${index}, ${track.id})">
+                            <i data-lucide="trash-2" class="w-6 h-6"></i>
+                        </button>
+                    </div>
                 `;
                 playlistContainer.appendChild(div);
             });
             lucide.createIcons();
         }
 
-        // --- PLAYER CORE (BACKGROUND OPTIMIZED) ---
-        window.playTrack = (index) => {
+        // --- PLAYER CORE ---
+        window.playTrack = async (index) => {
             if (index < 0 || index >= playlist.length) return;
             currentIndex = index;
             const track = playlist[index];
@@ -252,24 +378,43 @@
             playerContainer.classList.remove('hidden');
             currentTitle.textContent = track.name;
             
-            audioPlayer.src = track.url;
-            audioPlayer.load(); // Vital para o background no mobile
+            // Lógica de Roteamento (Offline vs Online)
+            if (offlineTracks.has(track.id)) {
+                const blob = await getOfflineBlob(track.id);
+                if (blob) {
+                    // Libera URL antiga da memória para não vazar RAM
+                    if(audioPlayer.src.startsWith('blob:')) URL.revokeObjectURL(audioPlayer.src);
+                    audioPlayer.src = URL.createObjectURL(blob);
+                    
+                    playerBadge.textContent = "MODO OFFLINE";
+                    playerBadge.className = "offline-badge text-[10px] px-4 py-1 rounded-full font-black tracking-[0.4em] uppercase";
+                } else {
+                    audioPlayer.src = track.url; // Fallback
+                }
+            } else {
+                audioPlayer.src = track.url;
+                playerBadge.textContent = "SINAL ATIVO (ONLINE)";
+                playerBadge.className = "bg-blue-600 text-[10px] px-4 py-1 rounded-full font-black tracking-[0.4em] uppercase shadow-[0_0_15px_#3b82f6]";
+            }
             
+            audioPlayer.load(); 
             audioPlayer.play().then(() => {
                 updateMetadata(track.name);
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
             }).catch(e => {
-                showStatus("FALHA NO STREAMING. VERIFIQUE A LIGAÇÃO.", true);
+                showStatus("FALHA NO ÁUDIO. VERIFIQUE A CONEXÃO.", true);
             });
             
             renderPlaylist();
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        window.deleteTrack = (index) => {
+        window.deleteTrack = (index, trackId) => {
             if (confirm("REMOVER TRACK?")) {
                 playlist.splice(index, 1);
                 localStorage.setItem('monster_setlist_v2', JSON.stringify(playlist));
+                deleteOfflineBlob(trackId); // Limpa da memória também
+                
                 if (currentIndex === index) {
                     audioPlayer.pause();
                     playerContainer.classList.add('hidden');
@@ -279,7 +424,7 @@
             }
         };
 
-        // --- MEDIA SESSION (A CHAVE PARA O SEGUNDO PLANO) ---
+        // --- MEDIA SESSION & TIME JUMP ---
         function setupMediaSession() {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.setActionHandler('play', () => audioPlayer.play());
@@ -289,27 +434,29 @@
             }
         }
 
-        // ATUALIZAÇÃO DE DESIGNER: Alterado ícone de vegetais para Haltere Monster
         function updateMetadata(title) {
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: title,
-                    artist: 'MONSTER DROPBOX PLAYER',
+                    artist: 'MONSTER GUARD',
                     album: 'DENYLSON PRO SET',
-                    artwork: [
-                        { 
-                            src: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png', 
-                            sizes: '512x512', 
-                            type: 'image/png' 
-                        }
-                    ]
+                    artwork: [{ src: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png', sizes: '512x512', type: 'image/png' }]
                 });
             }
         }
 
-        // --- CONTROLOS ---
+        // --- CONTROLOS (+10s e -10s) ---
         document.getElementById('btn-play-pause').onclick = () => {
             audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
+        };
+
+        // Adicionando Pulos de Tempo
+        document.getElementById('btn-rewind').onclick = () => {
+            audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
+        };
+
+        document.getElementById('btn-forward').onclick = () => {
+            audioPlayer.currentTime = Math.min(audioPlayer.duration || 0, audioPlayer.currentTime + 10);
         };
 
         audioPlayer.onplay = () => {
@@ -342,20 +489,10 @@
             audioPlayer.currentTime = ((e.clientX - rect.left) / rect.width) * audioPlayer.duration;
         };
 
-        // AUTO-NEXT
         audioPlayer.onended = () => document.getElementById('btn-next').click();
 
+        // Inicia a app
         init();
     </script>
 </body>
 </html>
-```eof
-```
-
-### O que mudou na sua aplicação:
-
-1.  **Eliminação dos Vegetais:** Localizei o link antigo que estava puxando um ícone aleatório de comida e substituí por um ícone de **Dumbbell (Haltere)** em azul néon de alta resolução.
-2.  **Harmonia Visual:** Agora, quando você estiver treinando e olhar para a tela de bloqueio do seu celular, verá o nome da música com o ícone de academia, mantendo o foco total.
-3.  **Melhoria na Função `updateMetadata`:** Este é o trecho do código que controla o que o sistema operacional (Android/iOS) exibe. Ele agora está configurado para mostrar a arte correta do seu "Denylson PRO Set".
-
-Basta atualizar o arquivo no seu ambiente e dar o play. Adeus pepino e tomate, agora é modo **Monster** ativado!
