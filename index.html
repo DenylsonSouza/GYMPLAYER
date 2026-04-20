@@ -230,22 +230,62 @@
         };
 
         window.makeOffline = async (id, url, event) => {
-            event.stopPropagation(); // Evita dar play na música ao clicar no botão de download
+            event.stopPropagation(); // Evita dar play na música ao clicar no botão de transferência
             
             if (offlineTracks.has(id)) {
-                showStatus("TRACK JÁ ESTÁ OFFLINE!", false);
+                showStatus("A FAIXA JÁ ESTÁ OFFLINE!", false);
                 return;
             }
 
-            showStatus("BAIXANDO PARA A MEMÓRIA OFFLINE...", false);
-            const btnIcon = document.getElementById(`dl-icon-${id}`);
-            if(btnIcon) btnIcon.classList.add('animate-bounce', 'text-blue-400');
+            const btnContainer = document.getElementById(`dl-btn-${id}`);
+            const progressContainer = document.getElementById(`dl-progress-container-${id}`);
+            const progressFill = document.getElementById(`dl-progress-fill-${id}`);
+            const statusText = document.getElementById(`track-status-${id}`);
+            
+            // UX: Esconde o botão e revela a barra de progresso
+            if(btnContainer) btnContainer.classList.add('hidden');
+            if(progressContainer) progressContainer.classList.remove('hidden');
+            if(statusText) {
+                statusText.textContent = "A INICIAR TRANSFERÊNCIA...";
+                statusText.classList.remove('text-blue-500');
+                statusText.classList.add('text-green-400');
+            }
 
             try {
-                // Faz o fetch do Dropbox. O ?raw=1 geralmente permite CORS.
                 const response = await fetch(url);
                 if (!response.ok) throw new Error("Erro na rede");
-                const blob = await response.blob();
+                
+                // Engenharia: Leitura do stream de dados para calcular a %
+                const contentLength = response.headers.get('content-length');
+                const total = contentLength ? parseInt(contentLength, 10) : 0;
+                let loaded = 0;
+                const chunks = [];
+                
+                const reader = response.body.getReader();
+
+                while (true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    
+                    chunks.push(value);
+                    loaded += value.length;
+                    
+                    if (total) {
+                        const percent = Math.round((loaded / total) * 100);
+                        if(progressFill) progressFill.style.width = `${percent}%`;
+                        if(statusText) statusText.textContent = `A TRANSFERIR... ${percent}%`;
+                    } else {
+                        // Fallback se o Dropbox ocultar o tamanho total (Animação infinita + MB lidos)
+                        if(progressFill) {
+                            progressFill.style.width = `100%`;
+                            progressFill.classList.add('animate-pulse');
+                        }
+                        const mbLoaded = (loaded / (1024 * 1024)).toFixed(1);
+                        if(statusText) statusText.textContent = `A TRANSFERIR... ${mbLoaded}MB`;
+                    }
+                }
+                
+                const blob = new Blob(chunks, { type: response.headers.get('content-type') || 'audio/mpeg' });
                 
                 const tx = db.transaction("audioBlobs", "readwrite");
                 tx.objectStore("audioBlobs").put({ id: id, blob: blob });
@@ -257,8 +297,15 @@
                 };
             } catch (err) {
                 console.error(err);
-                if(btnIcon) btnIcon.classList.remove('animate-bounce', 'text-blue-400');
-                showStatus("ERRO: O DROPBOX BLOQUEOU O DOWNLOAD DIRETO. CONTINUARÁ ONLINE.", true);
+                // Reverte a UI em caso de falha
+                if(progressContainer) progressContainer.classList.add('hidden');
+                if(btnContainer) btnContainer.classList.remove('hidden');
+                if(statusText) {
+                    statusText.textContent = "STREAMING";
+                    statusText.classList.remove('text-green-400');
+                    statusText.classList.add('text-blue-500');
+                }
+                showStatus("ERRO: O DROPBOX BLOQUEOU A TRANSFERÊNCIA DIRETA.", true);
             }
         };
 
@@ -349,14 +396,19 @@
                             <i data-lucide="${currentIndex === index ? 'zap' : 'play-circle'}" class="w-8 h-8 text-white"></i>
                             ${isOffline ? '<div class="absolute -top-2 -right-2 bg-green-500 rounded-full p-1 border-2 border-slate-900"><i data-lucide="check" class="w-3 h-3 text-white"></i></div>' : ''}
                         </div>
-                        <div class="flex flex-col overflow-hidden">
+                        <div class="flex flex-col overflow-hidden w-full pr-2">
                             <span class="text-xl font-900 truncate text-white italic tracking-tighter uppercase leading-none mb-1">${track.name}</span>
-                            <span class="text-[9px] ${isOffline ? 'text-green-500' : 'text-blue-500'} font-black tracking-widest uppercase">${isOffline ? 'PRONTO OFFLINE' : 'STREAMING'}</span>
+                            <span id="track-status-${track.id}" class="text-[9px] ${isOffline ? 'text-green-500' : 'text-blue-500'} font-black tracking-widest uppercase">${isOffline ? 'PRONTO OFFLINE' : 'STREAMING'}</span>
+                            
+                            <!-- Nova Barra de Progresso da Transferência -->
+                            <div id="dl-progress-container-${track.id}" class="hidden w-full h-1.5 bg-slate-800 rounded mt-2 overflow-hidden border border-slate-700">
+                                <div id="dl-progress-fill-${track.id}" class="h-full bg-green-500 w-0 transition-all duration-200 ease-out shadow-[0_0_10px_#22c55e]"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
                         ${!isOffline ? `
-                        <button class="text-slate-500 hover:text-blue-400 p-2 transition-all active:scale-75" title="Salvar Offline" onclick="makeOffline(${track.id}, '${track.url}', event)">
+                        <button id="dl-btn-${track.id}" class="text-slate-500 hover:text-blue-400 p-2 transition-all active:scale-75" title="Salvar Offline" onclick="makeOffline(${track.id}, '${track.url}', event)">
                             <i id="dl-icon-${track.id}" data-lucide="download-cloud" class="w-6 h-6"></i>
                         </button>` : ''}
                         <button class="text-slate-700 hover:text-red-500 p-2 transition-all active:scale-50" title="Excluir" onclick="event.stopPropagation(); deleteTrack(${index}, ${track.id})">
@@ -382,7 +434,7 @@
             if (offlineTracks.has(track.id)) {
                 const blob = await getOfflineBlob(track.id);
                 if (blob) {
-                    // Libera URL antiga da memória para não vazar RAM
+                    // Liberta URL antiga da memória para não vazar RAM
                     if(audioPlayer.src.startsWith('blob:')) URL.revokeObjectURL(audioPlayer.src);
                     audioPlayer.src = URL.createObjectURL(blob);
                     
@@ -402,7 +454,7 @@
                 updateMetadata(track.name);
                 if ('mediaSession' in navigator) navigator.mediaSession.playbackState = "playing";
             }).catch(e => {
-                showStatus("FALHA NO ÁUDIO. VERIFIQUE A CONEXÃO.", true);
+                showStatus("FALHA NO ÁUDIO. VERIFIQUE A LIGAÇÃO.", true);
             });
             
             renderPlaylist();
@@ -450,7 +502,7 @@
             audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause();
         };
 
-        // Adicionando Pulos de Tempo
+        // Adicionando Saltos de Tempo
         document.getElementById('btn-rewind').onclick = () => {
             audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
         };
