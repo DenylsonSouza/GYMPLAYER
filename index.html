@@ -112,7 +112,7 @@
 
         <div id="status-display" class="status-msg monster-text italic tracking-wider"></div>
 
-        <!-- Seção de Adição -->
+        <!-- Secção de Adição -->
         <section class="glass-card p-6 rounded-[2.5rem] flex flex-col gap-5">
             <div class="flex flex-col gap-2">
                 <label class="monster-text text-[10px] text-blue-500 tracking-widest ml-2">TRACK ID</label>
@@ -121,7 +121,7 @@
             </div>
             <div class="flex flex-col gap-2">
                 <label class="monster-text text-[10px] text-blue-500 tracking-widest ml-2">DROPBOX URL</label>
-                <input type="text" id="song-url" placeholder="COLE O LINK COMPARTILHADO" 
+                <input type="text" id="song-url" placeholder="COLE O LINK PARTILHADO" 
                     class="bg-black/50 border border-blue-500/20 rounded-xl p-4 text-sm focus:border-blue-500 outline-none text-white placeholder-slate-800">
             </div>
             <button id="add-btn" class="monster-text bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-2xl transition-all flex items-center justify-center gap-3 text-lg shadow-lg active:scale-95">
@@ -245,6 +245,18 @@
                 return;
             }
 
+            // Engenharia de Link Dinâmico: Garante que mesmo links velhos usem a CDN direta do Dropbox
+            let downloadUrl = url;
+            try {
+                let u = new URL(downloadUrl);
+                if(u.hostname.includes('dropbox.com')) {
+                    u.hostname = 'dl.dropboxusercontent.com';
+                    u.searchParams.delete('dl');
+                    u.searchParams.delete('raw');
+                    downloadUrl = u.toString();
+                }
+            } catch(e) { }
+
             const btn = document.getElementById(`dl-btn-${id}`);
             const icon = document.getElementById(`dl-icon-${id}`);
             const percentTxt = document.getElementById(`dl-percent-${id}`);
@@ -256,19 +268,35 @@
             if(icon) icon.classList.add('hidden');
             if(percentTxt) percentTxt.classList.remove('hidden');
             if(svg) svg.classList.remove('hidden');
-            if(btn) btn.classList.remove('hover:text-blue-400', 'active:scale-75'); // Desativa hover para parecer um loader
+            if(btn) {
+                btn.classList.remove('hover:text-blue-400', 'active:scale-75');
+                btn.style.cursor = 'default';
+            }
             
             if(statusText) {
-                statusText.textContent = "A INICIAR TRANSFERÊNCIA...";
+                statusText.textContent = "A LIGAR AO SERVIDOR...";
                 statusText.classList.remove('text-blue-500');
                 statusText.classList.add('text-green-400');
             }
 
             try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error("Erro na rede");
+                const response = await fetch(downloadUrl, { mode: 'cors' });
+                if (!response.ok) throw new Error("Erro na rede: " + response.status);
                 
                 // Engenharia: Leitura do stream de dados para calcular a %
+                if (!response.body || !response.body.getReader) {
+                    // Fallback para browsers antigos que não suportam stream
+                    const blob = await response.blob();
+                    const tx = db.transaction("audioBlobs", "readwrite");
+                    tx.objectStore("audioBlobs").put({ id: id, blob: blob });
+                    tx.oncomplete = () => {
+                        offlineTracks.add(id);
+                        renderPlaylist();
+                        showStatus("SUCESSO: DISPONÍVEL SEM INTERNET!", false);
+                    };
+                    return;
+                }
+
                 const contentLength = response.headers.get('content-length');
                 const total = contentLength ? parseInt(contentLength, 10) : 0;
                 let loaded = 0;
@@ -314,19 +342,25 @@
                     showStatus("SUCESSO: DISPONÍVEL SEM INTERNET!", false);
                 };
             } catch (err) {
-                console.error(err);
+                console.error("Erro no Download Offline:", err);
                 // Reverte a UI em caso de falha
                 if(icon) icon.classList.remove('hidden');
                 if(percentTxt) percentTxt.classList.add('hidden');
-                if(svg) svg.classList.add('hidden');
-                if(btn) btn.classList.add('hover:text-blue-400', 'active:scale-75');
+                if(svg) {
+                    svg.classList.remove('animate-spin');
+                    svg.classList.add('hidden');
+                }
+                if(btn) {
+                    btn.classList.add('hover:text-blue-400', 'active:scale-75');
+                    btn.style.cursor = 'pointer';
+                }
 
                 if(statusText) {
                     statusText.textContent = "STREAMING";
                     statusText.classList.remove('text-green-400');
                     statusText.classList.add('text-blue-500');
                 }
-                showStatus("ERRO: O DROPBOX BLOQUEOU A TRANSFERÊNCIA DIRETA.", true);
+                showStatus("ERRO: O SERVIDOR BLOQUEOU A TRANSFERÊNCIA. TENTE NOVAMENTE MAIS TARDE.", true);
             }
         };
 
@@ -372,8 +406,12 @@
         function formatDropboxUrl(rawUrl) {
             try {
                 let url = new URL(rawUrl.trim());
-                url.searchParams.set('raw', '1');
-                url.searchParams.delete('dl');
+                // Conversão crítica para o servidor de CDN direta (Bypass CORS)
+                if (url.hostname.includes('dropbox.com')) {
+                    url.hostname = 'dl.dropboxusercontent.com';
+                    url.searchParams.delete('dl');
+                    url.searchParams.delete('raw');
+                }
                 return url.toString();
             } catch (e) {
                 return rawUrl.includes('?') ? rawUrl.replace(/dl=[01]/, 'raw=1') : rawUrl + '?raw=1';
@@ -430,7 +468,7 @@
                                 <circle cx="18" cy="18" r="15" fill="none" stroke="#1e293b" stroke-width="2.5"></circle>
                                 <circle id="dl-progress-circle-${track.id}" class="circular-progress-circle" cx="18" cy="18" r="15" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-dasharray="94.25" stroke-dashoffset="94.25" stroke-linecap="round"></circle>
                             </svg>
-                            <!-- Botão de Download / Progresso Textual -->
+                            <!-- Botão de Transferência / Progresso Textual -->
                             <button id="dl-btn-${track.id}" class="relative z-10 text-slate-500 hover:text-blue-400 transition-all active:scale-75 flex items-center justify-center w-full h-full" title="Salvar Offline" onclick="makeOffline(${track.id}, '${track.url}', event)">
                                 <i id="dl-icon-${track.id}" data-lucide="download-cloud" class="w-6 h-6"></i>
                                 <span id="dl-percent-${track.id}" class="hidden text-[10px] font-black text-green-400">0</span>
