@@ -610,5 +610,14 @@
         // Inicia a app
         init();
     </script>
+
+    <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("Aplicação Pronta para Offline!"))
+      .catch(err => console.log("Erro no registo:", err));
+  }
+</script>
+    
 </body>
 </html>
